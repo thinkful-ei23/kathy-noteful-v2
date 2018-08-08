@@ -21,47 +21,47 @@ knex
 
 // // // //================== GET by id
 
-// //const id = 1004;
-// knex
-//   .select('notes.id', 'title', 'content')
-//   .from('notes')
-//   .where('id', id) //('notes.id')
-//   .then(results =>  {
-//     console.log(results[0]);
-//   })
-//   .catch(err => {
-//     console.error(err);
-// 	});
+// const id = 1004;
+knex
+  .select('notes.id', 'title', 'content')
+  .from('notes')
+  .where('id', id) //('notes.id')
+  .then(results =>  {
+    console.log(results[0]);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 // // // UPDATE by id
-// const id = 1000;
+let id = 1000;
 
-// knex('notes')
-//   .where('id', id)
-//   .update('title', 'This is the new UPDATED Knex title')
-//   .then(results =>  {
-//     console.log(results[0]);
-//   })
-//   .catch(err => {
-//     console.error(err);
-//   });
+knex('notes')
+  .where('id', id)
+  .update('title', 'This is the new UPDATED Knex title')
+  .then(results =>  {
+    console.log(results[0]);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 //CREATE a note with prop and inserts into db and returns new note as object
-//const id = 1000;
-// knex
-//   .insert({title: 'NEW Inserted Title', content: 'Some more stuff'})
-//   .into('notes')
-//   .returning(['id','title','content'])
-//   .then(results =>  {
-//     console.log(results[0]);
-//   })
-//   .catch(err => {
-//     console.error(err);
-//   });
+
+knex
+  .insert({title: 'NEW Inserted Title', content: 'Some more stuff'})
+  .into('notes')
+  .returning(['id','title','content'])
+  .then(results =>  {
+    console.log(results[0]);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 
 // DELETE by id
-const id = 1024;
+id = 1024;
 knex('notes')
   .where('id', id)
   .del()

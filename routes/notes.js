@@ -138,7 +138,7 @@ router.delete('/:id', (req, res, next) => {
   const id = req.params.id;
 
   knex('notes')
-    .where('id', id)
+    .where('notes.id', id)
     .del()
     .then(results => {
       res.json(results);

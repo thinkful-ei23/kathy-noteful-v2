@@ -1,4 +1,4 @@
-/* global $ noteful api store */
+/* global $  */
 'use strict';
 
 $(document).ready(function () {
@@ -11,11 +11,11 @@ $(document).ready(function () {
     });
 
   console.info('Get folders, coming soon...');
-  // api.search('/api/folders')
-  //   .then(response => {
-  //     store.folders = response;
-  //     noteful.render();
-  //   });
+  api.search('/api/folders')
+    .then(response => {
+      store.folders = response;
+      noteful.render();
+    });
 
   console.info('Get tags, coming soon...');
   // api.search('/api/tags')

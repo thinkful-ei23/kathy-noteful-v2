@@ -10,41 +10,56 @@ const router = express.Router();
 // const simDB = require('../db/simDB');
 // const notes = simDB.initialize(data);
 
-// Get All (and search by query)
+// Get a single item
 
 router.get('/', (req, res, next) => {
-  const { searchTerm } = req.query;
+  const folderId = req.query.folderId;
+  const { searchTerm }  = req.query.searchTerm;
+  knex
+    .select('notes.id', 'title', 'content', 'folders.id as folderId', 'folders.name as folderName')
+    .from('notes')
+    .leftJoin('folders', 'notes.folder_id', 'folders.id')
+    .modify(function (queryBuilder) {
+      if (searchTerm) {
+        queryBuilder.where('title', 'like', `%{searchTerm}%`);
+      }
+    })
+    .modify(function (queryBuilder) {
+      if (folderId) {
+        queryBuilder.where('folder_id', folderId);
+      }
+    })
+    .orderBy('notes.id')
+    .then(results => {
+      res.json(results);
+    })
+    .catch(err =>
+      next(err));
+});
+
+// GET by id (and search by query)
+router.get('/:id', (req, res, next) => {
+  const { id } = req.query;
+
 
   knex
-    .select('notes.id', 'title', 'content')
+    .select('notes.id', 'title', 'content', 'folders.id as folderId', 'folders.name as folderName')
     .from('notes')
+    .leftJoin('folders', 'notes.folder_id', 'folders.id')
     .modify(function (queryBuilder) {
-      console.log(searchTerm);
-      if (searchTerm) {
-        queryBuilder.where('title', 'like', `%${searchTerm}%`);
+      if (id) {
+        queryBuilder.where('id', id);
+      }
+    })
+    .modify(function (queryBuilder) {
+      if (folderId) {
+        queryBuilder.where('folder_id', folderId);
       }
     })
     .orderBy('notes.id')
     .then(results => {
       //console.log(results);
       res.json(results);
-    })
-    .catch(err => {
-      next(err);
-    });
-});
-
-// Get a single item
-
-router.get('/:id', (req, res, next) => {
-  const id = req.params.id;
-  knex
-    .select('notes.id', 'title', 'content')
-    .from('notes')
-    .where('id', id) //('notes.id')
-    .then(results =>  {
-      //console.log(results);
-      res.json(results[0]);
     })
     .catch(err => {
       next(err);
@@ -86,26 +101,36 @@ router.put('/:id', (req, res, next) => {
 
 // Post (insert) an item
 router.post('/', (req, res, next) => {
-  const { title, content } = req.body;
+  const { title, content, folderId } = req.body;
 
-  const newItem = { title, content };
+  const newItem = {
+    title: title,
+    content: content,
+    folder_id: folderId
+  };
   /***** Never trust users - validate input *****/
   if (!newItem.title) {
     const err = new Error('Missing `title` in request body');
     err.status = 400;
     return next(err);
   }
+  let noteId;
 
-  knex
-    .insert({title: 'NEW Inserted Title', content: 'Some more stuff'})
+  knex.insert(newItem)
     .into('notes')
-    .returning(['id','title','content'])
-    .then(results =>  {
-      res.json(results[0]);
+    .returning('id')
+    .then(([id]) => {
+      noteId = id;
+      // Using the new id, select the new note and the folder
+      return knex.select('notes.id', 'title', 'content', 'folder_id as folderId', 'folders.name as folderName')
+        .from('notes')
+        .leftJoin('folders', 'notes.folder_id', 'folders.id')
+        .where('notes.id', noteId);
     })
-    .catch(err => {
-      next(err);
-    });
+    .then(([result]) => {
+      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+    })
+    .catch(err => next(err));
 });
 
 // // Delete an item
@@ -115,7 +140,7 @@ router.delete('/:id', (req, res, next) => {
   knex('notes')
     .where('id', id)
     .del()
-    .then( results => {
+    .then(results => {
       res.json(results);
     })
     .catch(err => {

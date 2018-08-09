@@ -1,4 +1,4 @@
-/* global $ noteful api store */
+/* global $  */
 'use strict';
 
 $(document).ready(function () {

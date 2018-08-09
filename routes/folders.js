@@ -1,14 +1,59 @@
 'use strict';
 
+const knex = require('../knex');
 const express = require('express');
+
 const router = express.Router();
 
-const knex = require('../knex');
-
-/* ========== GET/READ ALL TAGS ========== */
+//GET ALL FOLDERS
 router.get('/', (req, res, next) => {
-  knex.select('id', 'name')
+  knex
+    .select('folders.id', 'name')
     .from('folders')
+    .orderBy('folders.id')
+    .then(results => {
+      //console.log(results);
+      res.json(results);
+    })
+    .catch(err => {
+      next(err);
+    });
+});
+
+//GET by id
+router.get('/:id', (req, res, next) => {
+  const { id } = req.params;
+
+  knex
+    .select('folders.id', 'name')
+    .from('folders')
+    .where('folders.id', id)
+    .then(results => {
+      //console.log(results);
+      res.json(results[0]);
+    })
+    .catch(err => {
+      next(err);
+    });
+});
+// UPDATE folder - endpoint not used, but create to round out API
+
+router.put('/:id', (req, res, next) => {
+  const id = req.params.id;
+  const { name } = req.body;
+  const newItem = { name };
+
+  //   /***** Never trust users - validate input *****/
+  if (!newItem.name) {
+    const err = new Error('Missing `name` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  knex( 'folders' )
+    .update( 'name', newItem.name )
+    .where('id', id)
+    .returning(['id', 'name'])
     .then(results => {
       res.json(results);
     })
@@ -17,88 +62,44 @@ router.get('/', (req, res, next) => {
     });
 });
 
-/* ========== GET/READ SINGLE TAGS ========== */
-router.get('/:id', (req, res, next) => {
-  knex.first('id', 'name')
-    .where('id', req.params.id)
-    .from('folders')
-    .then(result => {
-      if (result) {
-        res.json(result);
-      } else {
-        next();
-      }
-    })
-    .catch(err => {
-      next(err);
-    });
-});
-
-/* ========== POST/CREATE ITEM ========== */
+// CREATE a folder accepts an obj with name and insert into db, returns new item and new id
 router.post('/', (req, res, next) => {
   const { name } = req.body;
 
-  /***** Never trust users. Validate input *****/
-  if (!name) {
+  const newItem = { name };
+  /***** Never trust users - validate input *****/
+  if (!newItem.name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
 
-  const newItem = { name };
-
-  knex.insert(newItem)
+  knex
+    .insert({name: newItem.name })
     .into('folders')
-    .returning(['id', 'name'])
-    .then((results) => {
-      const result = results[0];
-      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+    .returning(['id','name'])
+    .then(results =>  {
+      res.json(results[0]);
     })
     .catch(err => {
       next(err);
     });
 });
 
-/* ========== PUT/UPDATE A SINGLE ITEM ========== */
-router.put('/:id', (req, res, next) => {
-  const { name } = req.body;
-
-  /***** Never trust users. Validate input *****/
-  if (!name) {
-    const err = new Error('Missing `name` in request body');
-    err.status = 400;
-    return next(err);
-  }
-
-  const updateItem = { name };
+router.delete('/:id', (req, res, next) => {
+  const id = req.params.id;
 
   knex('folders')
-    .update(updateItem)
-    .where('id', req.params.id)
-    .returning(['id', 'name'])
-    .then(([result]) => {
-      if (result) {
-        res.json(result);
-      } else {
-        next();
-      }
-    })
+    .where('id', id)
+    .del()
+    .then( () => res.sendStatus(204))
     .catch(err => {
       next(err);
     });
 });
 
-/* ========== DELETE/REMOVE A SINGLE ITEM ========== */
-router.delete('/:id', (req, res, next) => {
-  knex.del()
-    .where('id', req.params.id)
-    .from('folders')
-    .then(() => {
-      res.status(204).end();
-    })
-    .catch(err => {
-      next(err);
-    });
-});
+
+
+
 
 module.exports = router;

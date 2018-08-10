@@ -25,7 +25,7 @@ knex
 knex
   .select('notes.id', 'title', 'content')
   .from('notes')
-  .where('id', id) //('notes.id')
+  .where('notes.id','id') //('notes.id')
   .then(results =>  {
     console.log(results[0]);
   })
@@ -67,7 +67,10 @@ knex('notes')
   .del()
   .then(console.log);
 
-
+//Add tags to the create endpoint test below
+const noteId = 99;
+const result = [34, 56, 78].map(tagId => ({ note_id: noteId, tag_id: tagId }));
+console.log(`insert: ${result} into notes_tags`);
 
 
 

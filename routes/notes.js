@@ -19,10 +19,10 @@ router.get('/', (req, res, next) => {
       'notes.id',
       'title',
       'content',
-      'folders.id as folderId',
+      'folder_id as folderId',
       'folders.name as foldersName',
-      'tags.name as tagsName',
-      'tags.id as tagsId'
+      'tags.name as tagName',
+      'tags.id as tagId'
     )
     .from('notes')
     .leftJoin('folders', 'notes.folder_id', 'folders.id')
@@ -64,20 +64,21 @@ router.get('/:id', (req, res, next) => {
       'notes.id',
       'title',
       'content',
-      'folders.id as folderId',
-      'folders.name as folderName',
-      'tags.name as tagsName',
-      'tags.id as tagsId'
+      'folder_id as folderId',
+      'folders.name as foldersName',
+      'tags.name as tagName',
+      'tags.id as tagId'
     )
+
     .from('notes')
     .leftJoin('folders', 'notes.folder_id', 'folders.id')
     .leftJoin('notes_tags', 'notes_tags.note_id', 'notes.id')
     .leftJoin('tags', 'notes_tags.tag_id', 'tags.id')
     .where('notes.id', id)
     .then(result => {
-      if (result[0]) {
+      if (result) {
         const hydrated = hydrateNotes(result);
-        res.json(hydrated[0]);
+        res.json(hydrated);
       } else {
         next();
       }
@@ -176,7 +177,7 @@ router.post('/', (req, res, next) => {
       })
       .then(() => {
         // Populate tags in notes_tags
-        const tagsInsert = tags.map(tagId => ({
+        const tagsInsert = tags.map(tag => ({
           note_id: noteId,
           tag_id: tag.id
         }));
@@ -198,7 +199,7 @@ router.post('/', (req, res, next) => {
           .leftJoin('folders', 'notes.folder_id', 'folders.id')
           .leftJoin('notes_tags', 'notes.id', 'notes_tags.note_id')
           .leftJoin('tags', 'notes_tags.tag_id', 'tags.id')
-          .where('notes.id', 'noteId');
+          .where('notes.id', noteId);
       })
       .then(([result]) => {
         if (result) {

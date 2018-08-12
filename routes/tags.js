@@ -1,18 +1,16 @@
 'use strict';
 
 const express = require('express');
-const knex = require('../knex');
-// Create an router instance (aka "mini-app")
 const router = express.Router();
 
-//GET ALL TAGS
+const knex = require('../knex');
+
+/* ========== GET/READ ALL TAGS ========== */
 router.get('/', (req, res, next) => {
   knex
-    .select('tags.id', 'name')
+    .select('id', 'name')
     .from('tags')
-    .orderBy('tags.id')
     .then(results => {
-      //console.log(results);
       res.json(results);
     })
     .catch(err => {
@@ -20,90 +18,94 @@ router.get('/', (req, res, next) => {
     });
 });
 
-//GET by id
+/* ========== GET/READ SINGLE TAGS ========== */
 router.get('/:id', (req, res, next) => {
-  const { id } = req.params;
-
   knex
-    .select('tags.id', 'name')
+    .first('id', 'name')
+    .where('id', req.params.id)
     .from('tags')
-    .where('tags.id', id)
-    .then(results => {
-      //console.log(results);
-      res.json(results[0]);
-    })
-    .catch(err => {
-      next(err);
-    });
-});
-// UPDATE folder - endpoint not used, but create to round out API
-
-router.put('/:id', (req, res, next) => {
-  const id = req.params.id;
-  const { name } = req.body;
-  const newItem = { name };
-
-  //   /***** Never trust users - validate input *****/
-  if (!newItem.name) {
-    const err = new Error('Missing `name` in request body');
-    err.status = 400;
-    return next(err);
-  }
-
-  knex('tags')
-    .update('name', newItem.name)
-    .where('id', id)
-    .returning(['id', 'name'])
-    .then(results => {
-      res.json(results);
+    .then(result => {
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
     })
     .catch(err => {
       next(err);
     });
 });
 
-// CREATE / POST a tag
+/* ========== POST/CREATE ITEM ========== */
 router.post('/', (req, res, next) => {
   const { name } = req.body;
 
-
-  /***** Never trust users - validate input *****/
+  /***** Never trust users. Validate input *****/
   if (!name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
+
   const newItem = { name };
 
   knex
     .insert(newItem)
     .into('tags')
     .returning(['id', 'name'])
-    .then((results) => {
-      // USES array index solution to get first item in results array'
+    .then(results => {
       const result = results[0];
-      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
-
+      res
+        .location(`${req.originalUrl}/${result.id}`)
+        .status(201)
+        .json(result);
     })
     .catch(err => {
       next(err);
     });
 });
-//============================================
-router.delete('/:id', (req, res, next) => {
-  const id = req.params.id;
+
+/* ========== PUT/UPDATE A SINGLE ITEM ========== */
+router.put('/:id', (req, res, next) => {
+  const { name } = req.body;
+
+  /***** Never trust users. Validate input *****/
+  if (!name) {
+    const err = new Error('Missing `name` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  const updateItem = { name };
 
   knex('tags')
-    .where('tags.id', id)
-    .del()
-    .then( () => {
-      res.sendStatus(204);
+    .update(updateItem)
+    .where('id', req.params.id)
+    .returning(['id', 'name'])
+    .then(([result]) => {
+      if (result) {
+        res.json(result);
+      } else {
+        next(); // fall-through to 404 handler
+      }
     })
     .catch(err => {
       next(err);
     });
 });
 
-
+/* ========== DELETE/REMOVE A SINGLE ITEM ========== */
+router.delete('/:id', (req, res, next) => {
+  knex
+    .del()
+    .where('id', req.params.id)
+    .from('tags')
+    .then(() => {
+      res.status(204).end();
+    })
+    .catch(err => {
+      next(err);
+    });
+});
 
 module.exports = router;

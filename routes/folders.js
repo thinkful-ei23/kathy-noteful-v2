@@ -50,8 +50,8 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  knex( 'folders' )
-    .update( 'name', newItem.name )
+  knex('folders')
+    .update('name', newItem.name)
     .where('id', id)
     .returning(['id', 'name'])
     .then(results => {
@@ -75,10 +75,10 @@ router.post('/', (req, res, next) => {
   }
 
   knex
-    .insert({name: newItem.name })
+    .insert({ name: newItem.name })
     .into('folders')
-    .returning(['id','name'])
-    .then(results =>  {
+    .returning(['id', 'name'])
+    .then(results => {
       res.json(results[0]);
     })
     .catch(err => {
@@ -92,14 +92,10 @@ router.delete('/:id', (req, res, next) => {
   knex('folders')
     .where('folders.id', id)
     .del()
-    .then( () => res.sendStatus(204))
+    .then(() => res.sendStatus(204))
     .catch(err => {
       next(err);
     });
 });
-
-
-
-
 
 module.exports = router;
